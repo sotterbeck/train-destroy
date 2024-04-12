@@ -1,6 +1,7 @@
 # TrainDestroy
 
 ![Train destory logo](docs/train-destroy-banner.png)
+
 TrainDestroy is a powerful paper spigot plugin tailored for metro servers seeking enhanced performance. It efficiently
 removes all minecarts in designated worlds at regular intervals, employing asynchronous scheduling to ensure optimal
 server responsiveness. With customizable messages, intervals, and multilingual support, TrainDestroy offers a seamless
@@ -17,8 +18,11 @@ solution to streamline your server's performance management.
 - **Configurability:** Customize TrainDestroy to suit your server's needs with configurable messages, intervals, and
   color schemes.
 
-- **Multi-language Support:** Messages displayed in the player's preferred language (currently supports English and
-  German).
+- **Multi-language Support:** Messages are being displayed in the player's preferred language (currently supports
+  English and German).
+
+> More features are being developed. TrainDestroy is currently a work-in-progress and is being tested in production on
+> our Minecraft server.
 
 ## Building
 
@@ -36,13 +40,13 @@ $ git clone https://github.com/sotterbeck/train-destroy.git
 $ cd train-destroy
 ```
 
-3. Build the plugin JAR using Gradle
+3. Build the plugin JAR using Gradle:
 
 ```
 $ ./gradlew shadowJar
 ```
 
-4. Locate the built JAR file in the build/libs directory.
+4. Locate the built JAR file in the `build/libs` directory.
 
 ## Usage
 
@@ -54,4 +58,4 @@ TrainDestroy provides the following commands:
 
 ## License
 
-TrainDestroy is licensed under the Apache License 2.0. See the LICENSE file for details.
+TrainDestroy is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
