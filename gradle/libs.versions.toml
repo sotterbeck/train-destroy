@@ -1,0 +1,29 @@
+[versions]
+kotlin = "1.9.22"
+junit = "5.10.2"
+mockk = "1.13.10"
+assertk = "0.28.0"
+mockbukkit = "3.78.0"
+
+papermc = "1.20.4-R0.1-SNAPSHOT"
+cloud = "2.0.0-beta.4"
+shadow = "8.1.1"
+runpaper = "2.2.0"
+
+[libraries]
+kotlin-std = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
+junit = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+assertk = { module = "com.willowtreeapps.assertk:assertk", version.ref = "assertk" }
+mockbukkit = { module = "com.github.seeseemelk:MockBukkit-v1.20", version.ref = "mockbukkit" }
+
+papermc = { module = "io.papermc.paper:paper-api", version.ref = "papermc" }
+cloud-paper = { module = "org.incendo:cloud-paper", version.ref = "cloud" }
+cloud-kotlin-annotations = { module = "org.incendo:cloud-kotlin-coroutines-annotations", version.ref = "cloud" }
+cloud-kotlin-extensions = { module = "org.incendo:cloud-kotlin-extensions", version.ref = "cloud" }
+
+
+[plugins]
+kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
+runpaper = { id = "xyz.jpenilla.run-paper", version.ref = "runpaper" }

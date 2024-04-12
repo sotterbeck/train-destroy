@@ -1,0 +1,16 @@
+worlds:
+  - "world"
+
+interval: 60
+
+countdown:
+  5: long
+  1: long
+  10: short
+
+messages:
+  prefix: "<dark_aqua>TrainDestroy</dark_aqua> <dark_gray>▎</dark_gray>"
+  colors:
+    primary: 0xfff9db
+    secondary: 0xffd43b
+    error: 0xff8787

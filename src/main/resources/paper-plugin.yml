@@ -1,0 +1,4 @@
+name: TrainDestroy
+version: '${version}'
+main: de.sotterbeck.traindestroy.TrainDestroy
+api-version: '1.20'
