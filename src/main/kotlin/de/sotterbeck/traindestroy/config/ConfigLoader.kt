@@ -8,7 +8,7 @@ import java.time.Duration
 class ConfigLoader(
     private val configFile: FileConfiguration,
     private val plugin: Plugin
-) : Reloadable {
+) {
     private lateinit var configData: TrainDestroyConfig
 
     val config: TrainDestroyConfig
@@ -19,7 +19,7 @@ class ConfigLoader(
             return configData
         }
 
-    override fun load() {
+    fun load() {
         configData = TrainDestroyConfig(
             worlds = getWorlds(),
             interval = Duration.ofMinutes(configFile.getLong("interval")),
@@ -29,9 +29,7 @@ class ConfigLoader(
         )
     }
 
-    private fun getWorlds() = configFile.getStringList("worlds")
-        .mapNotNull { plugin.server.getWorld(it) }
-        .toSet()
+    private fun getWorlds() = configFile.getStringList("worlds").toSet()
 
     private fun loadPrefix() = configFile.getString("messages.prefix") ?: ""
 
