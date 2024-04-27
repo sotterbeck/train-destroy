@@ -1,45 +1,48 @@
 package de.sotterbeck.traindestroy
 
-import de.sotterbeck.traindestroy.common.AdventureMessenger
+import de.sotterbeck.traindestroy.common.LocalizationSource
 import de.sotterbeck.traindestroy.common.Messenger
-import de.sotterbeck.traindestroy.common.ResourceBundleLocalizationSource
 import de.sotterbeck.traindestroy.config.ConfigLoader
-import de.sotterbeck.traindestroy.config.TrainDestroyConfig
-import de.sotterbeck.traindestroy.countdown.ShowCountdownInteractorImpl
-import de.sotterbeck.traindestroy.info.GetDestroyStatusInteractorImpl
+import de.sotterbeck.traindestroy.config.ReloadCommand
+import de.sotterbeck.traindestroy.config.Reloadable
 import de.sotterbeck.traindestroy.info.StatusCommand
-import de.sotterbeck.traindestroy.removal.BukkitDestroyTrainsScheduledInteractor
-import de.sotterbeck.traindestroy.removal.BukkitMinecartRepository
-import de.sotterbeck.traindestroy.schedule.*
+import de.sotterbeck.traindestroy.schedule.DestroyScheduleManager
+import de.sotterbeck.traindestroy.schedule.DisableScheduleCommand
+import de.sotterbeck.traindestroy.schedule.EnableScheduleCommand
+import de.sotterbeck.traindestroy.schedule.TrainDestroyTask
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.translation.GlobalTranslator
 import net.kyori.adventure.translation.TranslationRegistry
 import net.kyori.adventure.util.UTF8ResourceBundleControl
 import org.bukkit.command.CommandSender
 import org.bukkit.plugin.java.JavaPlugin
-import org.incendo.cloud.SenderMapper
+import org.bukkit.scheduler.BukkitTask
 import org.incendo.cloud.annotations.AnnotationParser
-import org.incendo.cloud.bukkit.CloudBukkitCapabilities
-import org.incendo.cloud.execution.ExecutionCoordinator
 import org.incendo.cloud.kotlin.coroutines.annotations.installCoroutineSupport
-import org.incendo.cloud.paper.PaperCommandManager
 import java.util.*
+import java.util.function.Consumer
 
 private const val bundleBaseName = "messages.messages"
 
-class TrainDestroy : JavaPlugin() {
+class TrainDestroy : JavaPlugin(), Reloadable {
 
-    private lateinit var destroyScheduleManager: DestroyScheduleManager
-    private lateinit var trainDestroyConfig: TrainDestroyConfig
+    private lateinit var pluginFactory: TrainDestroyPluginFactory
+    private lateinit var localizationSource: LocalizationSource
+
+    private lateinit var scheduleManager: DestroyScheduleManager
     private lateinit var messenger: Messenger
+    private lateinit var trainDestroyTask: Consumer<BukkitTask>
 
     override fun onEnable() {
+        pluginFactory = PaperTrainDestroyPluginFactory(
+            plugin = this,
+            reloadable = this
+        )
+        localizationSource = pluginFactory.createLocalizationSource()
+
         saveDefaultConfig()
 
-        val configLoader = ConfigLoader(config, this)
-        trainDestroyConfig = configLoader.config
-        messenger = AdventureMessenger(this, trainDestroyConfig)
-        destroyScheduleManager = StandardDestroyScheduleManager(trainDestroyConfig.interval)
+        buildDependencies()
 
         registerCommands()
 
@@ -48,35 +51,54 @@ class TrainDestroy : JavaPlugin() {
         setupTrainDestroyTask()
     }
 
-    private fun registerCommands() {
-        val commandManager = PaperCommandManager(
-            this,
-            ExecutionCoordinator.asyncCoordinator(),
-            SenderMapper.identity()
-        )
+    override fun reload() {
+        reloadConfig()
+        buildDependencies()
+    }
 
-        if (commandManager.hasCapability(CloudBukkitCapabilities.NATIVE_BRIGADIER)) {
-            commandManager.registerBrigadier()
-        } else {
-            commandManager.registerAsynchronousCompletions()
-        }
+    private fun buildDependencies() {
+        val configLoader = ConfigLoader(config, this)
+        val configData = configLoader.config
+
+        scheduleManager = pluginFactory.createDestroyScheduleManager(intervall = configData.interval)
+        messenger = pluginFactory.createMessenger(configData)
+
+        trainDestroyTask = TrainDestroyTask(
+            destroyTrains = pluginFactory.createDestroyTrainsScheduled(
+                schedule = scheduleManager,
+                minecartRepository = pluginFactory.createMinecartRepository(configData.worlds)
+            ),
+            showCountdown = pluginFactory.createShowCountdownInteractor(),
+            schedule = scheduleManager,
+            countdownConfig = configData.countdown,
+            messenger = messenger,
+        )
+    }
+
+    private fun registerCommands() {
+        val commandManager = (pluginFactory as PaperTrainDestroyPluginFactory)
+            .createCommandManager()
 
         val annotationParser = AnnotationParser(commandManager, CommandSender::class.java)
         annotationParser.installCoroutineSupport()
 
         annotationParser.parse(
             StatusCommand(
-                statusInteractor = GetDestroyStatusInteractorImpl(ResourceBundleLocalizationSource(bundleBaseName)),
-                scheduleManager = destroyScheduleManager,
+                statusInteractor = pluginFactory.createGetDestroyStatusInteractor(localizationSource),
+                schedule = scheduleManager,
                 messenger = messenger,
                 plugin = this,
             ),
             EnableScheduleCommand(
-                enableScheduleInteractor = EnableScheduleInteractorImpl(destroyScheduleManager),
+                enableScheduleInteractor = pluginFactory.createEnableScheduleInteractor(scheduleManager),
                 messenger = messenger
             ),
             DisableScheduleCommand(
-                disableScheduleInteractor = DisableScheduleInteractorImpl(destroyScheduleManager),
+                disableScheduleInteractor = pluginFactory.createDisableScheduleInteractor(scheduleManager),
+                messenger = messenger
+            ),
+            ReloadCommand(
+                reloadInteractor = pluginFactory.createReloadConfigInteractor(),
                 messenger = messenger
             )
         )
@@ -101,24 +123,9 @@ class TrainDestroy : JavaPlugin() {
     private fun setupTrainDestroyTask() {
         val delay = 0L
         val period = 20L
-
-        val task = TrainDestroyTask(
-            destroyTrains = BukkitDestroyTrainsScheduledInteractor(
-                minecartRepository = BukkitMinecartRepository(
-                    worlds = trainDestroyConfig.worlds
-                ),
-                schedule = destroyScheduleManager,
-                plugin = this,
-            ),
-            showCountdown = ShowCountdownInteractorImpl(),
-            schedule = destroyScheduleManager,
-            countdownConfig = trainDestroyConfig.countdown,
-            messenger = messenger,
-        )
-
         server.scheduler.runTaskTimerAsynchronously(
             this,
-            task,
+            trainDestroyTask,
             delay,
             period
         )

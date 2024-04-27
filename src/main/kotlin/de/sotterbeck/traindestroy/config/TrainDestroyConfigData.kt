@@ -1,11 +1,10 @@
 package de.sotterbeck.traindestroy.config
 
 import de.sotterbeck.traindestroy.countdown.ShowCountdownInteractor
-import org.bukkit.World
 import java.time.Duration
 
 data class TrainDestroyConfig(
-    val worlds: Set<World>,
+    val worlds: Set<String>,
     val prefix: String,
     val colors: ColorPalette,
     val interval: Duration,
